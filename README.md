@@ -37,3 +37,28 @@ You can also set `CENSUS_API_KEY` in your environment.
 If `--api-key` and `CENSUS_API_KEY` are both missing, the script will read from `census.key` in the repo root by default (first non-empty line).
 
 These files are structured to join on `year` + `state_abbr` (or `state_fips`) for future PVI/raw-partisanship comparisons.
+
+## Presidential Election Results Download
+
+Use the presidential results downloader to pull MIT Election Lab state-level presidential returns from Dataverse and normalize them to the same state identifiers used by the Census data.
+
+Script location:
+- `scripts/download_presidential_results.py`
+
+Output files:
+- `data/elections/presidential_results_raw.csv` (candidate-level state returns)
+- `data/elections/presidential_results_by_party.csv` (state-year-party aggregation)
+- `data/elections/presidential_results_source.json` (source and row-count metadata)
+
+Run:
+
+```bash
+python scripts/download_presidential_results.py
+```
+
+Optional flags:
+- `--years 2000 2004 2008 2012 2016 2020 2024` to keep specific election years
+- `--start-year 1976 --end-year 2024` to set a year range
+- `--guestbook-name`, `--guestbook-email`, `--guestbook-institution`, `--guestbook-position` to override the Dataverse guestbook fields
+
+The party-level CSV includes `year`, `state_fips`, `state_abbr`, and `state_name`, so it can be joined directly to the Census outputs.
