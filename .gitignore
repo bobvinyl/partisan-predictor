@@ -216,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local Census API key
+census.key
+.vscode/
+data/
+scripts/__pycache__/
