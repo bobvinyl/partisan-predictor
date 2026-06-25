@@ -1,0 +1,548 @@
+{
+  "1976": {
+    "population_total": {
+      "id": "Interpolated resident population between 1970 and 1980 decennial anchors",
+      "label": "Interpolated resident population between 1970 and 1980 decennial anchors"
+    },
+    "population_adult_18_plus": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "population_male": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "population_female": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "education_bachelors_or_higher_25_plus": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "race_white_alone": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "race_black_alone": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "race_asian_alone": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "ethnicity_hispanic_or_latino": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "ethnicity_not_hispanic_or_latino": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    }
+  },
+  "1980": {
+    "population_total": {
+      "id": "Interpolated resident population between 1970 and 1980 decennial anchors",
+      "label": "Interpolated resident population between 1970 and 1980 decennial anchors"
+    },
+    "population_adult_18_plus": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "population_male": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "population_female": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "education_bachelors_or_higher_25_plus": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "race_white_alone": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "race_black_alone": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "race_asian_alone": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "ethnicity_hispanic_or_latino": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "ethnicity_not_hispanic_or_latino": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    }
+  },
+  "1984": {
+    "population_total": {
+      "id": "Interpolated resident population between 1980 and 1990 decennial anchors",
+      "label": "Interpolated resident population between 1980 and 1990 decennial anchors"
+    },
+    "population_adult_18_plus": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "population_male": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "population_female": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "education_bachelors_or_higher_25_plus": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "race_white_alone": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "race_black_alone": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "race_asian_alone": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "ethnicity_hispanic_or_latino": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "ethnicity_not_hispanic_or_latino": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    }
+  },
+  "1988": {
+    "population_total": {
+      "id": "Interpolated resident population between 1980 and 1990 decennial anchors",
+      "label": "Interpolated resident population between 1980 and 1990 decennial anchors"
+    },
+    "population_adult_18_plus": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "population_male": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "population_female": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "education_bachelors_or_higher_25_plus": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "race_white_alone": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "race_black_alone": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "race_asian_alone": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "ethnicity_hispanic_or_latino": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "ethnicity_not_hispanic_or_latino": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    }
+  },
+  "1992": {
+    "population_total": {
+      "id": "1990 PEP county aggregation (total population only)",
+      "label": "1990 PEP county aggregation (total population only)"
+    },
+    "population_adult_18_plus": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "population_male": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "population_female": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "education_bachelors_or_higher_25_plus": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "race_white_alone": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "race_black_alone": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "race_asian_alone": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "ethnicity_hispanic_or_latino": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "ethnicity_not_hispanic_or_latino": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    }
+  },
+  "1996": {
+    "population_total": {
+      "id": "1990 PEP county aggregation (total population only)",
+      "label": "1990 PEP county aggregation (total population only)"
+    },
+    "population_adult_18_plus": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "population_male": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "population_female": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "education_bachelors_or_higher_25_plus": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "race_white_alone": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "race_black_alone": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "race_asian_alone": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "ethnicity_hispanic_or_latino": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    },
+    "ethnicity_not_hispanic_or_latino": {
+      "id": "",
+      "label": "Unavailable for this source/year"
+    }
+  },
+  "2000": {
+    "population_total": {
+      "id": "P001001",
+      "label": "Total population (2000 SF1)"
+    },
+    "population_adult_18_plus": {
+      "id": "SUM(P012008,P012009,P012010,P012011,P012012,P012013,P012014,P012015,P012016,P012017,P012018,P012019,P012020,P012021,P012022,P012023,P012024,P012025,P012032,P012033,P012034,P012035,P012036,P012037,P012038,P012039,P012040,P012041,P012042,P012043,P012044,P012045,P012046,P012047,P012048,P012049)",
+      "label": "Derived from P012 sex-by-age table (2000 SF1)"
+    },
+    "population_male": {
+      "id": "P012002",
+      "label": "Total!!Male (2000 SF1)"
+    },
+    "population_female": {
+      "id": "P012026",
+      "label": "Total!!Female (2000 SF1)"
+    },
+    "education_bachelors_or_higher_25_plus": {
+      "id": "SUM(P037015,P037016,P037017,P037018,P037032,P037033,P037034,P037035)",
+      "label": "Derived from P037 educational attainment (2000 SF3)"
+    },
+    "race_white_alone": {
+      "id": "P003002",
+      "label": "White alone (2000 SF1)"
+    },
+    "race_black_alone": {
+      "id": "P003003",
+      "label": "Black or African American alone (2000 SF1)"
+    },
+    "race_asian_alone": {
+      "id": "P003005",
+      "label": "Asian alone (2000 SF1)"
+    },
+    "ethnicity_hispanic_or_latino": {
+      "id": "P004002",
+      "label": "Hispanic or Latino (2000 SF1)"
+    },
+    "ethnicity_not_hispanic_or_latino": {
+      "id": "P004003",
+      "label": "Not Hispanic or Latino (2000 SF1)"
+    }
+  },
+  "2004": {
+    "population_total": {
+      "id": "INTERPOLATED_2000_TO_2005",
+      "label": "Linear interpolation between 2000 decennial and 2005 ACS detailed"
+    },
+    "population_adult_18_plus": {
+      "id": "INTERPOLATED_2000_TO_2005",
+      "label": "Linear interpolation between 2000 decennial and 2005 ACS detailed"
+    },
+    "population_male": {
+      "id": "INTERPOLATED_2000_TO_2005",
+      "label": "Linear interpolation between 2000 decennial and 2005 ACS detailed"
+    },
+    "population_female": {
+      "id": "INTERPOLATED_2000_TO_2005",
+      "label": "Linear interpolation between 2000 decennial and 2005 ACS detailed"
+    },
+    "education_bachelors_or_higher_25_plus": {
+      "id": "INTERPOLATED_2000_TO_2005",
+      "label": "Linear interpolation between 2000 decennial and 2005 ACS detailed"
+    },
+    "race_white_alone": {
+      "id": "INTERPOLATED_2000_TO_2005",
+      "label": "Linear interpolation between 2000 decennial and 2005 ACS detailed"
+    },
+    "race_black_alone": {
+      "id": "INTERPOLATED_2000_TO_2005",
+      "label": "Linear interpolation between 2000 decennial and 2005 ACS detailed"
+    },
+    "race_asian_alone": {
+      "id": "INTERPOLATED_2000_TO_2005",
+      "label": "Linear interpolation between 2000 decennial and 2005 ACS detailed"
+    },
+    "ethnicity_hispanic_or_latino": {
+      "id": "INTERPOLATED_2000_TO_2005",
+      "label": "Linear interpolation between 2000 decennial and 2005 ACS detailed"
+    },
+    "ethnicity_not_hispanic_or_latino": {
+      "id": "INTERPOLATED_2000_TO_2005",
+      "label": "Linear interpolation between 2000 decennial and 2005 ACS detailed"
+    }
+  },
+  "2008": {
+    "population_total": {
+      "id": "DP05_0001E",
+      "label": "Number!!Estimate!!SEX AND AGE!!Total population"
+    },
+    "population_adult_18_plus": {
+      "id": "DP05_0024E",
+      "label": "Number!!Estimate!!SEX AND AGE!!Total population!!18 years and over!!Female"
+    },
+    "population_male": {
+      "id": "DP05_0002E",
+      "label": "Number!!Estimate!!SEX AND AGE!!Total population!!Male"
+    },
+    "population_female": {
+      "id": "DP05_0003E",
+      "label": "Number!!Estimate!!SEX AND AGE!!Total population!!Female"
+    },
+    "education_bachelors_or_higher_25_plus": {
+      "id": "DP02_0067E",
+      "label": "Number!!Estimate!!EDUCATIONAL ATTAINMENT!!Population 25 years and over!!Percent bachelor's degree or higher"
+    },
+    "race_white_alone": {
+      "id": "DP05_0037E",
+      "label": "Number!!Estimate!!RACE!!One race!!American Indian and Alaska Native!!Navajo tribal grouping"
+    },
+    "race_black_alone": {
+      "id": "DP05_0038E",
+      "label": "Number!!Estimate!!RACE!!One race!!American Indian and Alaska Native!!Sioux tribal grouping"
+    },
+    "race_asian_alone": {
+      "id": "DP05_0044E",
+      "label": "Number!!Estimate!!RACE!!One race!!Asian!!Korean"
+    },
+    "ethnicity_hispanic_or_latino": {
+      "id": "DP05_0071E",
+      "label": "Number!!Estimate!!HISPANIC OR LATINO AND RACE!!Total population!!Not Hispanic or Latino"
+    },
+    "ethnicity_not_hispanic_or_latino": {
+      "id": "DP05_0072E",
+      "label": "Number!!Estimate!!HISPANIC OR LATINO AND RACE!!Total population!!Not Hispanic or Latino!!White alone"
+    }
+  },
+  "2012": {
+    "population_total": {
+      "id": "DP05_0001E",
+      "label": "Estimate!!SEX AND AGE!!Total population"
+    },
+    "population_adult_18_plus": {
+      "id": "DP05_0024E",
+      "label": "Estimate!!SEX AND AGE!!Female"
+    },
+    "population_male": {
+      "id": "DP05_0002E",
+      "label": "Estimate!!SEX AND AGE!!Male"
+    },
+    "population_female": {
+      "id": "DP05_0003E",
+      "label": "Estimate!!SEX AND AGE!!Female"
+    },
+    "education_bachelors_or_higher_25_plus": {
+      "id": "DP02_0067E",
+      "label": "Estimate!!EDUCATIONAL ATTAINMENT!!Percent bachelor's degree or higher"
+    },
+    "race_white_alone": {
+      "id": "DP05_0037E",
+      "label": "Estimate!!RACE!!One race!!American Indian and Alaska Native!!Navajo tribal grouping"
+    },
+    "race_black_alone": {
+      "id": "DP05_0038E",
+      "label": "Estimate!!RACE!!One race!!American Indian and Alaska Native!!Sioux tribal grouping"
+    },
+    "race_asian_alone": {
+      "id": "DP05_0044E",
+      "label": "Estimate!!RACE!!One race!!Asian!!Korean"
+    },
+    "ethnicity_hispanic_or_latino": {
+      "id": "DP05_0071E",
+      "label": "Estimate!!HISPANIC OR LATINO AND RACE!!Not Hispanic or Latino"
+    },
+    "ethnicity_not_hispanic_or_latino": {
+      "id": "DP05_0072E",
+      "label": "Estimate!!HISPANIC OR LATINO AND RACE!!Not Hispanic or Latino!!White alone"
+    }
+  },
+  "2016": {
+    "population_total": {
+      "id": "DP05_0001E",
+      "label": "Estimate!!SEX AND AGE!!Total population"
+    },
+    "population_adult_18_plus": {
+      "id": "DP05_0024E",
+      "label": "Estimate!!SEX AND AGE!!18 years and over!!Female"
+    },
+    "population_male": {
+      "id": "DP05_0002E",
+      "label": "Estimate!!SEX AND AGE!!Total population!!Male"
+    },
+    "population_female": {
+      "id": "DP05_0003E",
+      "label": "Estimate!!SEX AND AGE!!Total population!!Female"
+    },
+    "education_bachelors_or_higher_25_plus": {
+      "id": "DP02_0067E",
+      "label": "Estimate!!EDUCATIONAL ATTAINMENT!!Percent bachelor's degree or higher"
+    },
+    "race_white_alone": {
+      "id": "DP05_0037E",
+      "label": "Estimate!!RACE!!One race!!American Indian and Alaska Native!!Navajo tribal grouping"
+    },
+    "race_black_alone": {
+      "id": "DP05_0038E",
+      "label": "Estimate!!RACE!!One race!!American Indian and Alaska Native!!Sioux tribal grouping"
+    },
+    "race_asian_alone": {
+      "id": "DP05_0044E",
+      "label": "Estimate!!RACE!!One race!!Asian!!Korean"
+    },
+    "ethnicity_hispanic_or_latino": {
+      "id": "DP05_0071E",
+      "label": "Estimate!!HISPANIC OR LATINO AND RACE!!Total population!!Not Hispanic or Latino"
+    },
+    "ethnicity_not_hispanic_or_latino": {
+      "id": "DP05_0072E",
+      "label": "Estimate!!HISPANIC OR LATINO AND RACE!!Total population!!Not Hispanic or Latino!!White alone"
+    }
+  },
+  "2020": {
+    "population_total": {
+      "id": "DP05_0001E",
+      "label": "Estimate!!SEX AND AGE!!Total population"
+    },
+    "population_adult_18_plus": {
+      "id": "DP05_0024E",
+      "label": "Estimate!!SEX AND AGE!!Total population!!65 years and over"
+    },
+    "population_male": {
+      "id": "DP05_0002E",
+      "label": "Estimate!!SEX AND AGE!!Total population!!Male"
+    },
+    "population_female": {
+      "id": "DP05_0003E",
+      "label": "Estimate!!SEX AND AGE!!Total population!!Female"
+    },
+    "education_bachelors_or_higher_25_plus": {
+      "id": "DP02_0067E",
+      "label": "Estimate!!EDUCATIONAL ATTAINMENT!!Population 25 years and over!!High school graduate or higher"
+    },
+    "race_white_alone": {
+      "id": "DP05_0037E",
+      "label": "Estimate!!RACE!!Total population!!One race!!White"
+    },
+    "race_black_alone": {
+      "id": "DP05_0038E",
+      "label": "Estimate!!RACE!!Total population!!One race!!Black or African American"
+    },
+    "race_asian_alone": {
+      "id": "DP05_0044E",
+      "label": "Estimate!!RACE!!Total population!!One race!!Asian"
+    },
+    "ethnicity_hispanic_or_latino": {
+      "id": "DP05_0071E",
+      "label": "Estimate!!HISPANIC OR LATINO AND RACE!!Total population!!Hispanic or Latino (of any race)"
+    },
+    "ethnicity_not_hispanic_or_latino": {
+      "id": "DP05_0072E",
+      "label": "Estimate!!HISPANIC OR LATINO AND RACE!!Total population!!Hispanic or Latino (of any race)!!Mexican"
+    }
+  },
+  "2024": {
+    "population_total": {
+      "id": "DP05_0001E",
+      "label": "Estimate!!SEX AND AGE!!Total population"
+    },
+    "population_adult_18_plus": {
+      "id": "DP05_0024E",
+      "label": "Estimate!!SEX AND AGE!!Total population!!65 years and over"
+    },
+    "population_male": {
+      "id": "DP05_0002E",
+      "label": "Estimate!!SEX AND AGE!!Total population!!Male"
+    },
+    "population_female": {
+      "id": "DP05_0003E",
+      "label": "Estimate!!SEX AND AGE!!Total population!!Female"
+    },
+    "education_bachelors_or_higher_25_plus": {
+      "id": "DP02_0067E",
+      "label": "Estimate!!EDUCATIONAL ATTAINMENT!!Population 25 years and over!!High school graduate or higher"
+    },
+    "race_white_alone": {
+      "id": "DP05_0037E",
+      "label": "Estimate!!RACE!!Total population!!One race!!White"
+    },
+    "race_black_alone": {
+      "id": "DP05_0038E",
+      "label": "Estimate!!RACE!!Total population!!One race!!White!!Egyptian"
+    },
+    "race_asian_alone": {
+      "id": "DP05_0044E",
+      "label": "Estimate!!RACE!!Total population!!One race!!White!!Other White"
+    },
+    "ethnicity_hispanic_or_latino": {
+      "id": "DP05_0071E",
+      "label": "Estimate!!RACE!!Total population!!One race!!Native Hawaiian and Other Pacific Islander!!Native Hawaiian"
+    },
+    "ethnicity_not_hispanic_or_latino": {
+      "id": "DP05_0072E",
+      "label": "Estimate!!RACE!!Total population!!One race!!Native Hawaiian and Other Pacific Islander!!Samoan"
+    }
+  }
+}
