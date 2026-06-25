@@ -151,6 +151,12 @@ def state_chart(
         axis=alt.Axis(titleColor=SIGN_POSITIVE, labelColor=SIGN_POSITIVE, tickColor=SIGN_POSITIVE),
         scale=alt.Scale(zero=False),
     )
+    zero_line = (
+        alt.Chart(pd.DataFrame({"value": [0.0]}))
+        .mark_rule(color="#6b7280", strokeDash=[4, 4])
+        .encode(y=partisan_y)
+        .properties(height=420)
+    )
 
     if show_state_partisanship:
         partisan_layers.append(
@@ -234,12 +240,43 @@ def state_chart(
         )
 
     if partisan_layers:
-        partisan_chart = alt.layer(*partisan_layers)
+        partisan_chart = alt.layer(zero_line, *partisan_layers)
         chart = alt.layer(partisan_chart, line_chart).resolve_scale(y="independent").properties(title=state)
     else:
         chart = line_chart.properties(title=state)
 
     chart = chart.configure_view(stroke=None)
+    return chart
+
+
+def yearly_scatter_chart(df: pd.DataFrame, year: int) -> alt.Chart:
+    year_df = (
+        df[df["year"] == year][
+            ["state", "state_abbr", "year", "population_density_per_sq_mile", "state_partisanship", "pvi"]
+        ]
+        .query("state != 'District of Columbia'")
+        .dropna(subset=["population_density_per_sq_mile", "state_partisanship"])
+        .copy()
+    )
+
+    chart = (
+        alt.Chart(year_df)
+        .mark_circle(size=95, opacity=0.85)
+        .encode(
+            x=alt.X("population_density_per_sq_mile:Q", title="Population density (per sq mile)"),
+            y=alt.Y("state_partisanship:Q", title="State partisanship"),
+            color=alt.Color("state_abbr:N", title="State"),
+            tooltip=[
+                alt.Tooltip("state:N", title="State"),
+                alt.Tooltip("year:O", title="Year"),
+                alt.Tooltip("population_density_per_sq_mile:Q", title="Population density", format=",.2f"),
+                alt.Tooltip("state_partisanship:Q", title="State partisanship", format=".2f"),
+                alt.Tooltip("pvi:Q", title="PVI", format=".2f"),
+            ],
+        )
+        .properties(height=300, title=f"{year}: Population density vs state partisanship")
+        .configure_view(stroke=None)
+    )
     return chart
 
 
@@ -318,3 +355,17 @@ else:
             details.append(f"PVI {state_df['pvi'].dropna().iloc[-1]:.2f}")
 
         st.markdown(f"**Latest observed values** for {state}: " + ", ".join(details) + ".")
+
+    st.subheader("Population Density vs State Partisanship by Year")
+    scatter_source = filtered[filtered["state"] != "District of Columbia"].copy()
+    scatter_years = sorted(scatter_source["year"].dropna().astype(int).unique().tolist())
+
+    for year in scatter_years:
+        year_points = scatter_source[
+            (scatter_source["year"] == year)
+            & scatter_source["population_density_per_sq_mile"].notna()
+            & scatter_source["state_partisanship"].notna()
+        ]
+        if year_points.empty:
+            continue
+        st.altair_chart(yearly_scatter_chart(scatter_source, year), use_container_width=True)
