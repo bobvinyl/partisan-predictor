@@ -39,6 +39,10 @@
     "ethnicity_not_hispanic_or_latino": {
       "id": "",
       "label": "Unavailable for this source/year"
+    },
+    "population_density_per_sq_mile": {
+      "id": "DERIVED_POPULATION_TOTAL_OVER_LAND_AREA",
+      "label": "Derived as population_total divided by state land area in square miles"
     }
   },
   "1980": {
@@ -81,6 +85,10 @@
     "ethnicity_not_hispanic_or_latino": {
       "id": "",
       "label": "Unavailable for this source/year"
+    },
+    "population_density_per_sq_mile": {
+      "id": "DERIVED_POPULATION_TOTAL_OVER_LAND_AREA",
+      "label": "Derived as population_total divided by state land area in square miles"
     }
   },
   "1984": {
@@ -123,6 +131,10 @@
     "ethnicity_not_hispanic_or_latino": {
       "id": "",
       "label": "Unavailable for this source/year"
+    },
+    "population_density_per_sq_mile": {
+      "id": "DERIVED_POPULATION_TOTAL_OVER_LAND_AREA",
+      "label": "Derived as population_total divided by state land area in square miles"
     }
   },
   "1988": {
@@ -165,6 +177,10 @@
     "ethnicity_not_hispanic_or_latino": {
       "id": "",
       "label": "Unavailable for this source/year"
+    },
+    "population_density_per_sq_mile": {
+      "id": "DERIVED_POPULATION_TOTAL_OVER_LAND_AREA",
+      "label": "Derived as population_total divided by state land area in square miles"
     }
   },
   "1992": {
@@ -207,6 +223,10 @@
     "ethnicity_not_hispanic_or_latino": {
       "id": "",
       "label": "Unavailable for this source/year"
+    },
+    "population_density_per_sq_mile": {
+      "id": "DERIVED_POPULATION_TOTAL_OVER_LAND_AREA",
+      "label": "Derived as population_total divided by state land area in square miles"
     }
   },
   "1996": {
@@ -249,6 +269,10 @@
     "ethnicity_not_hispanic_or_latino": {
       "id": "",
       "label": "Unavailable for this source/year"
+    },
+    "population_density_per_sq_mile": {
+      "id": "DERIVED_POPULATION_TOTAL_OVER_LAND_AREA",
+      "label": "Derived as population_total divided by state land area in square miles"
     }
   },
   "2000": {
@@ -291,6 +315,10 @@
     "ethnicity_not_hispanic_or_latino": {
       "id": "P004003",
       "label": "Not Hispanic or Latino (2000 SF1)"
+    },
+    "population_density_per_sq_mile": {
+      "id": "DERIVED_POPULATION_TOTAL_OVER_LAND_AREA",
+      "label": "Derived as population_total divided by state land area in square miles"
     }
   },
   "2004": {
@@ -333,6 +361,10 @@
     "ethnicity_not_hispanic_or_latino": {
       "id": "INTERPOLATED_2000_TO_2005",
       "label": "Linear interpolation between 2000 decennial and 2005 ACS detailed"
+    },
+    "population_density_per_sq_mile": {
+      "id": "DERIVED_POPULATION_TOTAL_OVER_LAND_AREA",
+      "label": "Derived as population_total divided by state land area in square miles"
     }
   },
   "2008": {
@@ -375,6 +407,10 @@
     "ethnicity_not_hispanic_or_latino": {
       "id": "DP05_0072E",
       "label": "Number!!Estimate!!HISPANIC OR LATINO AND RACE!!Total population!!Not Hispanic or Latino!!White alone"
+    },
+    "population_density_per_sq_mile": {
+      "id": "DERIVED_POPULATION_TOTAL_OVER_LAND_AREA",
+      "label": "Derived as population_total divided by state land area in square miles"
     }
   },
   "2012": {
@@ -417,6 +453,10 @@
     "ethnicity_not_hispanic_or_latino": {
       "id": "DP05_0072E",
       "label": "Estimate!!HISPANIC OR LATINO AND RACE!!Not Hispanic or Latino!!White alone"
+    },
+    "population_density_per_sq_mile": {
+      "id": "DERIVED_POPULATION_TOTAL_OVER_LAND_AREA",
+      "label": "Derived as population_total divided by state land area in square miles"
     }
   },
   "2016": {
@@ -459,6 +499,10 @@
     "ethnicity_not_hispanic_or_latino": {
       "id": "DP05_0072E",
       "label": "Estimate!!HISPANIC OR LATINO AND RACE!!Total population!!Not Hispanic or Latino!!White alone"
+    },
+    "population_density_per_sq_mile": {
+      "id": "DERIVED_POPULATION_TOTAL_OVER_LAND_AREA",
+      "label": "Derived as population_total divided by state land area in square miles"
     }
   },
   "2020": {
@@ -501,6 +545,10 @@
     "ethnicity_not_hispanic_or_latino": {
       "id": "DP05_0072E",
       "label": "Estimate!!HISPANIC OR LATINO AND RACE!!Total population!!Hispanic or Latino (of any race)!!Mexican"
+    },
+    "population_density_per_sq_mile": {
+      "id": "DERIVED_POPULATION_TOTAL_OVER_LAND_AREA",
+      "label": "Derived as population_total divided by state land area in square miles"
     }
   },
   "2024": {
@@ -543,6 +591,10 @@
     "ethnicity_not_hispanic_or_latino": {
       "id": "DP05_0072E",
       "label": "Estimate!!RACE!!Total population!!One race!!Native Hawaiian and Other Pacific Islander!!Samoan"
+    },
+    "population_density_per_sq_mile": {
+      "id": "DERIVED_POPULATION_TOTAL_OVER_LAND_AREA",
+      "label": "Derived as population_total divided by state land area in square miles"
     }
   }
 }

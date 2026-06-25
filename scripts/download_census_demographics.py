@@ -45,6 +45,62 @@ _STATE_LOOKUP_CACHE: Optional[Dict[str, str]] = None
 _STATE_FIPS_NAME_CACHE: Optional[Dict[str, str]] = None
 _APPORTIONMENT_ANCHOR_CACHE: Optional[Dict[int, Dict[str, float]]] = None
 
+# State land area in square miles, used to derive population density from
+# population totals for all supported years.
+STATE_LAND_AREA_SQ_MILES: Dict[str, float] = {
+    "01": 50645.33,
+    "02": 570640.95,
+    "04": 113594.08,
+    "05": 52035.48,
+    "06": 155779.22,
+    "08": 103641.89,
+    "09": 4842.36,
+    "10": 1948.54,
+    "11": 61.05,
+    "12": 53624.76,
+    "13": 57513.49,
+    "15": 6422.63,
+    "16": 82643.12,
+    "17": 55518.93,
+    "18": 35826.11,
+    "19": 55857.13,
+    "20": 81758.72,
+    "21": 39486.34,
+    "22": 43203.90,
+    "23": 30842.92,
+    "24": 9706.99,
+    "25": 7800.06,
+    "26": 56538.90,
+    "27": 79626.74,
+    "28": 46923.27,
+    "29": 68741.52,
+    "30": 145545.80,
+    "31": 76824.17,
+    "32": 109781.18,
+    "33": 8952.65,
+    "34": 7354.22,
+    "35": 121298.15,
+    "36": 47126.40,
+    "37": 48617.91,
+    "38": 69000.80,
+    "39": 40860.69,
+    "40": 68594.92,
+    "41": 95988.01,
+    "42": 44742.70,
+    "44": 1033.81,
+    "45": 30060.70,
+    "46": 75811.00,
+    "47": 41234.90,
+    "48": 261231.71,
+    "49": 82169.62,
+    "50": 9216.66,
+    "51": 39490.09,
+    "53": 66455.52,
+    "54": 24038.21,
+    "55": 54157.80,
+    "56": 97093.14,
+}
+
 # 50 states + DC. These are useful join keys for political datasets.
 STATE_FIPS_TO_ABBR: Dict[str, str] = {
     "01": "AL",
@@ -177,6 +233,9 @@ METRICS: Tuple[MetricSpec, ...] = (
         preferred_ids=("DP05_0072E",),
     ),
 )
+
+DERIVED_METRICS: Tuple[str, ...] = ("population_density_per_sq_mile",)
+ALL_METRIC_NAMES: Tuple[str, ...] = tuple(metric.metric for metric in METRICS) + DERIVED_METRICS
 
 
 def parse_args() -> argparse.Namespace:
@@ -329,6 +388,38 @@ def empty_metric_map(label: str) -> Dict[str, Dict[str, str]]:
         else:
             metric_map[metric.metric] = {"id": "", "label": "Unavailable for this source/year"}
     return metric_map
+
+
+def add_population_density(rows: List[Dict[str, object]]) -> List[Dict[str, object]]:
+    for row in rows:
+        state_fips = str(row.get("state_fips", ""))
+        population_total = row.get("population_total")
+        land_area_sq_miles = STATE_LAND_AREA_SQ_MILES.get(state_fips)
+
+        if population_total is None or land_area_sq_miles in (None, 0):
+            row["population_density_per_sq_mile"] = None
+            continue
+
+        row["population_density_per_sq_mile"] = float(population_total) / land_area_sq_miles
+
+    return rows
+
+
+def add_derived_metric_map(resolved: Dict[str, Dict[str, str]]) -> Dict[str, Dict[str, str]]:
+    out = dict(resolved)
+    out["population_density_per_sq_mile"] = {
+        "id": "DERIVED_POPULATION_TOTAL_OVER_LAND_AREA",
+        "label": "Derived as population_total divided by state land area in square miles",
+    }
+    return out
+
+
+def finalize_year_output(
+    rows: List[Dict[str, object]],
+    resolved: Dict[str, Dict[str, str]],
+    source_name: str,
+) -> Tuple[List[Dict[str, object]], Dict[str, Dict[str, str]], str]:
+    return add_population_density(rows), add_derived_metric_map(resolved), source_name
 
 
 def build_population_only_rows(
@@ -836,7 +927,7 @@ def interpolate_row_values(
         "state_name": row_start["state_name"],
     }
 
-    metric_names = [m.metric for m in METRICS]
+    metric_names = list(ALL_METRIC_NAMES)
     for metric in metric_names:
         start_val = row_start.get(metric)
         end_val = row_end.get(metric)
@@ -885,11 +976,11 @@ def build_year(
 ) -> Tuple[List[Dict[str, object]], Dict[str, Dict[str, str]], str]:
     if year in (1976, 1980, 1984, 1988):
         rows, resolved = build_year_pre1990_interpolated_population(year, api_key, sleep_seconds)
-        return rows, resolved, "interpolated population (decennial anchors)"
+        return finalize_year_output(rows, resolved, "interpolated population (decennial anchors)")
 
     if year in (1992, 1996):
         rows, resolved = build_year_199x_pep_population(year, api_key, sleep_seconds)
-        return rows, resolved, "1990 PEP county aggregation (population only)"
+        return finalize_year_output(rows, resolved, "1990 PEP county aggregation (population only)")
 
     if year == 2020:
         rows, resolved = build_year_profile(
@@ -898,23 +989,23 @@ def build_year(
             sleep_seconds,
             profile_base_url=ACS5_PROFILE_2020_BASE_URL,
         )
-        return rows, resolved, "acs/acs5/profile"
+        return finalize_year_output(rows, resolved, "acs/acs5/profile")
 
     if year >= MIN_ACS1_PROFILE_YEAR:
         rows, resolved = build_year_profile(year, api_key, sleep_seconds)
-        return rows, resolved, "acs/acs1/profile"
+        return finalize_year_output(rows, resolved, "acs/acs1/profile")
 
     if year == 2005:
         rows, resolved = build_year_2005_acs1(year, api_key, sleep_seconds)
-        return rows, resolved, "acs/acs1 (detailed tables)"
+        return finalize_year_output(rows, resolved, "acs/acs1 (detailed tables)")
 
     if year == 2004:
         rows, resolved = build_year_2004_interpolated(year, api_key, sleep_seconds)
-        return rows, resolved, "interpolated (2000 decennial -> 2005 ACS detailed)"
+        return finalize_year_output(rows, resolved, "interpolated (2000 decennial -> 2005 ACS detailed)")
 
     if year == 2000:
         rows, resolved = build_year_2000_decennial(year, api_key, sleep_seconds)
-        return rows, resolved, "dec/sf1 + dec/sf3"
+        return finalize_year_output(rows, resolved, "dec/sf1 + dec/sf3")
 
     raise ValueError(
         "No supported Census API fallback configured for this year. "
@@ -1033,7 +1124,7 @@ def main() -> int:
     long_path = args.outdir / "state_demographics_long.csv"
     map_path = args.outdir / "metric_variable_map.json"
 
-    metric_names = [m.metric for m in METRICS]
+    metric_names = list(ALL_METRIC_NAMES)
     write_wide_csv(wide_path, all_rows)
     write_long_csv(long_path, all_rows, metric_names)
 

@@ -12,13 +12,16 @@ Output files:
 - `data/census/state_demographics_long.csv` (tidy metric-value format)
 - `data/census/metric_variable_map.json` (metric-to-Census-variable mapping used)
 
-Included metrics (counts):
+Included metrics:
 - total population
+- population density per square mile
 - adult population (18+)
 - male and female population
 - education: bachelor's degree or higher (age 25+)
 - race: white alone, black alone, asian alone
 - ethnicity: hispanic/latino and not hispanic/latino
+
+`population_density_per_sq_mile` is derived for every supported year as `population_total / state land area` using a bundled state land-area reference table.
 
 ### Run
 
