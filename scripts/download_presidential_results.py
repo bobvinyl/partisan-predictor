@@ -218,6 +218,12 @@ def parse_int(value: str) -> Optional[int]:
         return None
 
 
+def pct(votes: int, total: int) -> Optional[float]:
+    if total <= 0:
+        return None
+    return round((votes / total) * 100, 2)
+
+
 def parse_csv_rows(csv_text: str) -> List[Dict[str, str]]:
     reader = csv.DictReader(io.StringIO(csv_text))
     return [row for row in reader if row]
@@ -283,6 +289,7 @@ def aggregate_by_state_party(rows: List[Dict[str, str]]) -> List[Dict[str, objec
                 "party_simplified": party_simplified,
                 "votes": votes,
                 "total_votes": totalvotes,
+                "vote_pct": pct(votes, totalvotes),
                 "vote_share_of_total": (votes / totalvotes) if totalvotes else None,
                 "candidate_examples": "; ".join(value.get("candidate_examples", [])),
                 "writein_count": int(value.get("writein_count", 0)),
@@ -299,8 +306,10 @@ def aggregate_by_state_party(rows: List[Dict[str, str]]) -> List[Dict[str, objec
         row["two_party_total_votes"] = two_party_total
         if row["party_simplified"].upper() in {"DEMOCRAT", "REPUBLICAN"} and two_party_total:
             row["two_party_vote_share"] = row["votes"] / two_party_total
+            row["two_party_vote_pct"] = round((row["votes"] / two_party_total) * 100, 2)
         else:
             row["two_party_vote_share"] = None
+            row["two_party_vote_pct"] = None
 
     aggregated.sort(key=lambda r: (int(r["year"]), str(r["state_fips"]), str(r["party_simplified"]), str(r["party_detailed"])))
     return aggregated
@@ -349,6 +358,9 @@ def main() -> int:
         if not keep_year(year, years, args.start_year, args.end_year):
             continue
 
+        candidatevotes = parse_int(row.get("candidatevotes", ""))
+        totalvotes = parse_int(row.get("totalvotes", ""))
+
         raw_rows.append(
             {
                 "year": year,
@@ -360,8 +372,9 @@ def main() -> int:
                 "party_detailed": normalize_party(row.get("party_detailed", "")),
                 "party_simplified": normalize_party(row.get("party_simplified", "")),
                 "writein": (row.get("writein", "") or "").strip().lower() in {"true", "t", "1", "yes"},
-                "candidatevotes": parse_int(row.get("candidatevotes", "")),
-                "totalvotes": parse_int(row.get("totalvotes", "")),
+                "candidatevotes": candidatevotes,
+                "totalvotes": totalvotes,
+                "vote_pct": pct(candidatevotes or 0, totalvotes or 0),
                 "version": parse_int(row.get("version", "")),
                 "notes": (row.get("notes", "") or "").strip(),
             }
