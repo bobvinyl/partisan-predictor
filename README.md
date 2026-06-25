@@ -107,3 +107,23 @@ Sign convention:
 
 MIT Election Lab / Dataverse citation details used for the presidential dataset are saved in:
 - [mit_election_presidential_citation.md](mit_election_presidential_citation.md)
+
+## Streamlit App
+
+Use the interactive app to compare population, state partisanship, and PVI by state.
+
+Run:
+
+```bash
+streamlit run app.py
+```
+
+Dependencies used by the app:
+- `streamlit`
+- `pandas`
+- `altair`
+
+The app lets you select one or more states and a year range from 1976 to 2024. Each state view shows:
+- population as a line chart
+- state partisanship and PVI as clustered bars
+- blue for positive values and red for negative values
