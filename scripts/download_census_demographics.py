@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """Download state-level Census demographics by year.
 
-This script pulls selected metrics from the U.S. Census Bureau ACS 1-year profile API
-and writes analysis-ready CSV files keyed by year and state. The outputs are structured
-for downstream joins with political datasets like PVI or raw partisanship.
+This script pulls selected metrics from U.S. Census API endpoints and writes
+analysis-ready CSV files keyed by year and state. The outputs are structured for
+downstream joins with political datasets like PVI or raw partisanship.
 
 Data source:
-- https://api.census.gov/data/{year}/acs/acs1/profile
+- 2006+ (except 2020): https://api.census.gov/data/{year}/acs/acs1/profile
+- 2020 fallback: https://api.census.gov/data/2020/acs/acs5/profile
+- 2005 fallback: https://api.census.gov/data/2005/acs/acs1
+- 2000 fallback: https://api.census.gov/data/2000/dec/sf1 and /dec/sf3
 
 Example:
     python scripts/download_census_demographics.py --start-year 2010 --end-year 2025
@@ -28,6 +31,19 @@ from typing import Dict, Iterable, List, Optional, Tuple
 
 BASE_URL_TEMPLATE = "https://api.census.gov/data/{year}/acs/acs1/profile"
 USER_AGENT = "partisan-predictor/0.1 (demographics downloader)"
+MIN_ACS1_PROFILE_YEAR = 2006
+ACS5_PROFILE_2020_BASE_URL = "https://api.census.gov/data/2020/acs/acs5/profile"
+ACS1_2005_BASE_URL = "https://api.census.gov/data/2005/acs/acs1"
+DECENNIAL_2000_SF1_BASE_URL = "https://api.census.gov/data/2000/dec/sf1"
+DECENNIAL_2000_SF3_BASE_URL = "https://api.census.gov/data/2000/dec/sf3"
+PEP_1990_INT_CHARAGEGROUPS_BASE_URL = "https://api.census.gov/data/1990/pep/int_charagegroups"
+APPORTIONMENT_HISTORY_CSV_URL = (
+    "https://www2.census.gov/programs-surveys/decennial/2020/data/apportionment/apportionment.csv"
+)
+
+_STATE_LOOKUP_CACHE: Optional[Dict[str, str]] = None
+_STATE_FIPS_NAME_CACHE: Optional[Dict[str, str]] = None
+_APPORTIONMENT_ANCHOR_CACHE: Optional[Dict[int, Dict[str, float]]] = None
 
 # 50 states + DC. These are useful join keys for political datasets.
 STATE_FIPS_TO_ABBR: Dict[str, str] = {
@@ -245,6 +261,223 @@ def normalize_text(text: str) -> str:
     return " ".join(text.lower().replace("!", " ").split())
 
 
+def normalize_state_name(text: str) -> str:
+    return " ".join(
+        text.lower()
+        .replace(".", " ")
+        .replace("-", " ")
+        .replace("'", " ")
+        .split()
+    )
+
+
+def get_state_name_to_fips(api_key: str) -> Dict[str, str]:
+    global _STATE_LOOKUP_CACHE
+    if _STATE_LOOKUP_CACHE is not None:
+        return _STATE_LOOKUP_CACHE
+
+    lookup: Dict[str, str] = {}
+    for probe_year in (2024, 2023, 2022, 2021, 2019, 2010):
+        try:
+            rows = fetch_state_data(probe_year, [], api_key)
+        except Exception:  # noqa: BLE001
+            continue
+
+        for row in rows:
+            state_fips = row.get("state", "")
+            state_name = row.get("NAME", "")
+            if state_fips in STATE_FIPS_TO_ABBR and state_name:
+                lookup[normalize_state_name(state_name)] = state_fips
+
+        if lookup:
+            _STATE_LOOKUP_CACHE = lookup
+            return lookup
+
+    raise RuntimeError("Unable to resolve state name lookup from Census API")
+
+
+def get_state_fips_to_name(api_key: str) -> Dict[str, str]:
+    global _STATE_FIPS_NAME_CACHE
+    if _STATE_FIPS_NAME_CACHE is not None:
+        return _STATE_FIPS_NAME_CACHE
+
+    result: Dict[str, str] = {}
+    for probe_year in (2024, 2023, 2022, 2021, 2019, 2010):
+        try:
+            rows = fetch_state_data(probe_year, [], api_key)
+        except Exception:  # noqa: BLE001
+            continue
+
+        for row in rows:
+            state_fips = row.get("state", "")
+            state_name = row.get("NAME", "")
+            if state_fips in STATE_FIPS_TO_ABBR and state_name:
+                result[state_fips] = state_name
+
+        if result:
+            _STATE_FIPS_NAME_CACHE = result
+            return result
+
+    raise RuntimeError("Unable to resolve state FIPS->name lookup from Census API")
+
+
+def empty_metric_map(label: str) -> Dict[str, Dict[str, str]]:
+    metric_map: Dict[str, Dict[str, str]] = {}
+    for metric in METRICS:
+        if metric.metric == "population_total":
+            metric_map[metric.metric] = {"id": label, "label": label}
+        else:
+            metric_map[metric.metric] = {"id": "", "label": "Unavailable for this source/year"}
+    return metric_map
+
+
+def build_population_only_rows(
+    year: int,
+    population_by_state_fips: Dict[str, float],
+    api_key: str,
+) -> List[Dict[str, object]]:
+    name_by_fips = get_state_fips_to_name(api_key)
+    metric_names = [m.metric for m in METRICS if m.metric != "population_total"]
+
+    rows: List[Dict[str, object]] = []
+    for state_fips in sorted(population_by_state_fips, key=int):
+        if state_fips not in STATE_FIPS_TO_ABBR:
+            continue
+
+        state_name = name_by_fips.get(state_fips, "")
+
+        rows.append(
+            {
+                "year": year,
+                "state_fips": state_fips,
+                "state_abbr": STATE_FIPS_TO_ABBR[state_fips],
+                "state_name": state_name,
+                "population_total": population_by_state_fips[state_fips],
+                **{metric: None for metric in metric_names},
+            }
+        )
+
+    return rows
+
+
+def get_apportionment_anchor_populations(api_key: str) -> Dict[int, Dict[str, float]]:
+    global _APPORTIONMENT_ANCHOR_CACHE
+    if _APPORTIONMENT_ANCHOR_CACHE is not None:
+        return _APPORTIONMENT_ANCHOR_CACHE
+
+    raw = urllib.request.urlopen(APPORTIONMENT_HISTORY_CSV_URL, timeout=120).read().decode(
+        "utf-8", errors="replace"
+    )
+    rows = csv.DictReader(raw.splitlines())
+
+    name_to_fips = get_state_name_to_fips(api_key)
+    anchors: Dict[int, Dict[str, float]] = {1970: {}, 1980: {}, 1990: {}}
+
+    for row in rows:
+        if row.get("Geography Type", "") != "State":
+            continue
+
+        try:
+            year = int(row.get("Year", ""))
+        except ValueError:
+            continue
+        if year not in anchors:
+            continue
+
+        name_norm = normalize_state_name(row.get("Name", ""))
+        state_fips = name_to_fips.get(name_norm)
+        if not state_fips:
+            continue
+
+        pop_text = row.get("Resident Population", "").replace(",", "").strip()
+        if not pop_text:
+            continue
+        anchors[year][state_fips] = float(int(pop_text))
+
+    _APPORTIONMENT_ANCHOR_CACHE = anchors
+    return anchors
+
+
+def build_year_pre1990_interpolated_population(
+    year: int,
+    api_key: str,
+    sleep_seconds: float,
+) -> Tuple[List[Dict[str, object]], Dict[str, Dict[str, str]]]:
+    del sleep_seconds
+    anchors = get_apportionment_anchor_populations(api_key)
+
+    if year <= 1980:
+        start_year, end_year = 1970, 1980
+    else:
+        start_year, end_year = 1980, 1990
+
+    t = (year - start_year) / (end_year - start_year)
+    start = anchors[start_year]
+    end = anchors[end_year]
+
+    pop_by_state: Dict[str, float] = {}
+    for state_fips in sorted(set(start) & set(end), key=int):
+        pop_by_state[state_fips] = start[state_fips] + (end[state_fips] - start[state_fips]) * t
+
+    rows = build_population_only_rows(year, pop_by_state, api_key)
+    source = f"Interpolated resident population between {start_year} and {end_year} decennial anchors"
+    return rows, empty_metric_map(source)
+
+
+def build_year_199x_pep_population(
+    year: int,
+    api_key: str,
+    sleep_seconds: float,
+) -> Tuple[List[Dict[str, object]], Dict[str, Dict[str, str]]]:
+    year_code = str(year)[-2:]
+    pop_by_state: Dict[str, float] = {}
+
+    for state_fips in sorted(STATE_FIPS_TO_ABBR.keys(), key=int):
+        query = {
+            "get": "POP,YEAR,AGEGRP,HISP,RACE_SEX",
+            "for": "county:*",
+            "in": f"state:{state_fips}",
+            "YEAR": year_code,
+            "key": api_key,
+        }
+        url = f"{PEP_1990_INT_CHARAGEGROUPS_BASE_URL}?{urllib.parse.urlencode(query)}"
+        payload = http_get_json(url)
+        if not isinstance(payload, list) or len(payload) < 2:
+            continue
+
+        header = payload[0]
+        if not isinstance(header, list):
+            continue
+        idx = {name: i for i, name in enumerate(header)}
+
+        total = 0.0
+        for raw_row in payload[1:]:
+            if not isinstance(raw_row, list):
+                continue
+            agegrp = raw_row[idx.get("AGEGRP", -1)] if idx.get("AGEGRP", -1) >= 0 else ""
+            hisp = raw_row[idx.get("HISP", -1)] if idx.get("HISP", -1) >= 0 else ""
+            race_sex = raw_row[idx.get("RACE_SEX", -1)] if idx.get("RACE_SEX", -1) >= 0 else ""
+            county_idx = idx.get("county", idx.get("COUNTY", -1))
+            county = raw_row[county_idx] if county_idx >= 0 else ""
+            # AGEGRP 00 + HISP 1 + RACE_SEX 01/02 gives male/female totals for all origins.
+            # Exclude synthetic county 000 summary rows to avoid double counting.
+            if agegrp != "00" or hisp != "1" or race_sex not in ("01", "02") or county == "000":
+                continue
+
+            value = parse_number(raw_row[idx.get("POP", -1)] if idx.get("POP", -1) >= 0 else "")
+            if value is not None:
+                total += value
+
+        # PEP 1990 int_charagegroups stores counts in hundreds.
+        pop_by_state[state_fips] = total * 100.0
+        if sleep_seconds > 0:
+            time.sleep(sleep_seconds)
+
+    rows = build_population_only_rows(year, pop_by_state, api_key)
+    source = "1990 PEP county aggregation (total population only)"
+    return rows, empty_metric_map(source)
+
+
 def resolve_metric_var(
     metric: MetricSpec,
     group_variables: Dict[str, Dict[str, str]],
@@ -270,6 +503,7 @@ def fetch_state_data(
     year: int,
     variables: Iterable[str],
     api_key: str,
+    base_url: Optional[str] = None,
 ) -> List[Dict[str, str]]:
     var_list = ["NAME", *variables]
     query_params = {
@@ -279,7 +513,7 @@ def fetch_state_data(
     if api_key:
         query_params["key"] = api_key
 
-    base = BASE_URL_TEMPLATE.format(year=year)
+    base = base_url or BASE_URL_TEMPLATE.format(year=year)
     url = f"{base}?{urllib.parse.urlencode(query_params)}"
     payload = http_get_json(url)
     if not isinstance(payload, list) or not payload:
@@ -298,6 +532,37 @@ def fetch_state_data(
     return rows
 
 
+def fetch_state_data_chunked(
+    year: int,
+    variables: Iterable[str],
+    api_key: str,
+    base_url: str,
+    chunk_size: int = 45,
+) -> List[Dict[str, str]]:
+    var_list = list(dict.fromkeys(variables))
+    if not var_list:
+        return []
+
+    merged_by_state: Dict[str, Dict[str, str]] = {}
+    for i in range(0, len(var_list), chunk_size):
+        chunk = var_list[i : i + chunk_size]
+        rows = fetch_state_data(year, chunk, api_key, base_url=base_url)
+        for row in rows:
+            state_fips = row.get("state", "")
+            if not state_fips:
+                continue
+            if state_fips not in merged_by_state:
+                merged_by_state[state_fips] = {
+                    "state": state_fips,
+                    "NAME": row.get("NAME", ""),
+                }
+            merged_by_state[state_fips].update(row)
+
+    merged_rows = list(merged_by_state.values())
+    merged_rows.sort(key=lambda r: int(r["state"]))
+    return merged_rows
+
+
 def parse_number(value: str) -> Optional[float]:
     if value in ("", None, "null", "N", "-", "(X)"):
         return None
@@ -309,13 +574,33 @@ def parse_number(value: str) -> Optional[float]:
         return None
 
 
-def build_year(year: int, api_key: str, sleep_seconds: float) -> Tuple[List[Dict[str, object]], Dict[str, Dict[str, str]]]:
+def sum_values(row: Dict[str, str], variable_ids: Iterable[str]) -> Optional[float]:
+    values = [parse_number(row.get(var_id, "")) for var_id in variable_ids]
+    numeric = [v for v in values if v is not None]
+    if not numeric:
+        return None
+    return float(sum(numeric))
+
+
+def build_year_profile(
+    year: int,
+    api_key: str,
+    sleep_seconds: float,
+    profile_base_url: Optional[str] = None,
+) -> Tuple[List[Dict[str, object]], Dict[str, Dict[str, str]]]:
     group_cache: Dict[str, Dict[str, object]] = {}
     resolved: Dict[str, Dict[str, str]] = {}
 
     for metric in METRICS:
         if metric.group not in group_cache:
-            group_cache[metric.group] = fetch_group_metadata(year, metric.group, api_key)
+            base = profile_base_url or BASE_URL_TEMPLATE.format(year=year)
+            metadata_url = f"{base}/groups/{metric.group}.json"
+            if api_key:
+                metadata_url = f"{metadata_url}?key={urllib.parse.quote(api_key)}"
+            payload = http_get_json(metadata_url)
+            if not isinstance(payload, dict) or "variables" not in payload:
+                raise ValueError(f"Unexpected metadata format for year={year}, group={metric.group}")
+            group_cache[metric.group] = payload
             if sleep_seconds > 0:
                 time.sleep(sleep_seconds)
 
@@ -333,7 +618,7 @@ def build_year(year: int, api_key: str, sleep_seconds: float) -> Tuple[List[Dict
     if not query_var_ids:
         return [], resolved
 
-    raw_rows = fetch_state_data(year, query_var_ids, api_key)
+    raw_rows = fetch_state_data(year, query_var_ids, api_key, base_url=profile_base_url)
     if sleep_seconds > 0:
         time.sleep(sleep_seconds)
 
@@ -358,6 +643,284 @@ def build_year(year: int, api_key: str, sleep_seconds: float) -> Tuple[List[Dict
 
     normalized_rows.sort(key=lambda r: (int(r["state_fips"]), r["state_name"]))
     return normalized_rows, resolved
+
+
+def build_year_2005_acs1(
+    year: int,
+    api_key: str,
+    sleep_seconds: float,
+) -> Tuple[List[Dict[str, object]], Dict[str, Dict[str, str]]]:
+    del year  # Fixed endpoint for this builder.
+
+    adult_vars = [
+        *[f"B01001_{i:03d}E" for i in range(7, 26)],
+        *[f"B01001_{i:03d}E" for i in range(31, 50)],
+    ]
+    bachelors_plus_vars = [
+        "B15002_015E",
+        "B15002_016E",
+        "B15002_017E",
+        "B15002_018E",
+        "B15002_032E",
+        "B15002_033E",
+        "B15002_034E",
+        "B15002_035E",
+    ]
+
+    var_ids = [
+        "B01001_001E",
+        "B01001_002E",
+        "B01001_026E",
+        "B02001_002E",
+        "B02001_003E",
+        "B02001_005E",
+        "B03002_012E",
+        "B03002_013E",
+        *adult_vars,
+        *bachelors_plus_vars,
+    ]
+    var_ids = sorted(set(var_ids))
+    raw_rows = fetch_state_data_chunked(2005, var_ids, api_key, base_url=ACS1_2005_BASE_URL)
+    if sleep_seconds > 0:
+        time.sleep(sleep_seconds)
+
+    resolved = {
+        "population_total": {"id": "B01001_001E", "label": "Estimate!!Total population"},
+        "population_adult_18_plus": {
+            "id": "SUM(" + ",".join(adult_vars) + ")",
+            "label": "Derived from B01001 sex-by-age detailed table",
+        },
+        "population_male": {"id": "B01001_002E", "label": "Estimate!!Male"},
+        "population_female": {"id": "B01001_026E", "label": "Estimate!!Female"},
+        "education_bachelors_or_higher_25_plus": {
+            "id": "SUM(" + ",".join(bachelors_plus_vars) + ")",
+            "label": "Derived from B15002 educational attainment",
+        },
+        "race_white_alone": {"id": "B02001_002E", "label": "Estimate!!White alone"},
+        "race_black_alone": {"id": "B02001_003E", "label": "Estimate!!Black or African American alone"},
+        "race_asian_alone": {"id": "B02001_005E", "label": "Estimate!!Asian alone"},
+        "ethnicity_hispanic_or_latino": {"id": "B03002_012E", "label": "Estimate!!Hispanic or Latino"},
+        "ethnicity_not_hispanic_or_latino": {"id": "B03002_013E", "label": "Estimate!!Not Hispanic or Latino"},
+    }
+
+    normalized_rows: List[Dict[str, object]] = []
+    for row in raw_rows:
+        state_fips = row.get("state", "")
+        if state_fips not in STATE_FIPS_TO_ABBR:
+            continue
+
+        normalized_rows.append(
+            {
+                "year": 2005,
+                "state_fips": state_fips,
+                "state_abbr": STATE_FIPS_TO_ABBR[state_fips],
+                "state_name": row.get("NAME", ""),
+                "population_total": parse_number(row.get("B01001_001E", "")),
+                "population_adult_18_plus": sum_values(row, adult_vars),
+                "population_male": parse_number(row.get("B01001_002E", "")),
+                "population_female": parse_number(row.get("B01001_026E", "")),
+                "education_bachelors_or_higher_25_plus": sum_values(row, bachelors_plus_vars),
+                "race_white_alone": parse_number(row.get("B02001_002E", "")),
+                "race_black_alone": parse_number(row.get("B02001_003E", "")),
+                "race_asian_alone": parse_number(row.get("B02001_005E", "")),
+                "ethnicity_hispanic_or_latino": parse_number(row.get("B03002_012E", "")),
+                "ethnicity_not_hispanic_or_latino": parse_number(row.get("B03002_013E", "")),
+            }
+        )
+
+    normalized_rows.sort(key=lambda r: (int(r["state_fips"]), r["state_name"]))
+    return normalized_rows, resolved
+
+
+def build_year_2000_decennial(
+    year: int,
+    api_key: str,
+    sleep_seconds: float,
+) -> Tuple[List[Dict[str, object]], Dict[str, Dict[str, str]]]:
+    del year  # Fixed endpoint for this builder.
+
+    sf1_adult_vars = [
+        *[f"P012{i:03d}" for i in range(8, 26)],
+        *[f"P012{i:03d}" for i in range(32, 50)],
+    ]
+    sf1_vars = [
+        "P001001",
+        "P012002",
+        "P012026",
+        "P003002",
+        "P003003",
+        "P003005",
+        "P004002",
+        "P004003",
+        *sf1_adult_vars,
+    ]
+    sf1_rows = fetch_state_data(2000, sorted(set(sf1_vars)), api_key, base_url=DECENNIAL_2000_SF1_BASE_URL)
+    if sleep_seconds > 0:
+        time.sleep(sleep_seconds)
+
+    sf3_bachelors_plus_vars = [
+        "P037015",
+        "P037016",
+        "P037017",
+        "P037018",
+        "P037032",
+        "P037033",
+        "P037034",
+        "P037035",
+    ]
+    sf3_rows = fetch_state_data(2000, sf3_bachelors_plus_vars, api_key, base_url=DECENNIAL_2000_SF3_BASE_URL)
+    if sleep_seconds > 0:
+        time.sleep(sleep_seconds)
+
+    sf3_by_state = {row.get("state", ""): row for row in sf3_rows}
+
+    resolved = {
+        "population_total": {"id": "P001001", "label": "Total population (2000 SF1)"},
+        "population_adult_18_plus": {
+            "id": "SUM(" + ",".join(sf1_adult_vars) + ")",
+            "label": "Derived from P012 sex-by-age table (2000 SF1)",
+        },
+        "population_male": {"id": "P012002", "label": "Total!!Male (2000 SF1)"},
+        "population_female": {"id": "P012026", "label": "Total!!Female (2000 SF1)"},
+        "education_bachelors_or_higher_25_plus": {
+            "id": "SUM(" + ",".join(sf3_bachelors_plus_vars) + ")",
+            "label": "Derived from P037 educational attainment (2000 SF3)",
+        },
+        "race_white_alone": {"id": "P003002", "label": "White alone (2000 SF1)"},
+        "race_black_alone": {"id": "P003003", "label": "Black or African American alone (2000 SF1)"},
+        "race_asian_alone": {"id": "P003005", "label": "Asian alone (2000 SF1)"},
+        "ethnicity_hispanic_or_latino": {"id": "P004002", "label": "Hispanic or Latino (2000 SF1)"},
+        "ethnicity_not_hispanic_or_latino": {"id": "P004003", "label": "Not Hispanic or Latino (2000 SF1)"},
+    }
+
+    normalized_rows: List[Dict[str, object]] = []
+    for row in sf1_rows:
+        state_fips = row.get("state", "")
+        if state_fips not in STATE_FIPS_TO_ABBR:
+            continue
+        row_sf3 = sf3_by_state.get(state_fips, {})
+
+        normalized_rows.append(
+            {
+                "year": 2000,
+                "state_fips": state_fips,
+                "state_abbr": STATE_FIPS_TO_ABBR[state_fips],
+                "state_name": row.get("NAME", ""),
+                "population_total": parse_number(row.get("P001001", "")),
+                "population_adult_18_plus": sum_values(row, sf1_adult_vars),
+                "population_male": parse_number(row.get("P012002", "")),
+                "population_female": parse_number(row.get("P012026", "")),
+                "education_bachelors_or_higher_25_plus": sum_values(row_sf3, sf3_bachelors_plus_vars),
+                "race_white_alone": parse_number(row.get("P003002", "")),
+                "race_black_alone": parse_number(row.get("P003003", "")),
+                "race_asian_alone": parse_number(row.get("P003005", "")),
+                "ethnicity_hispanic_or_latino": parse_number(row.get("P004002", "")),
+                "ethnicity_not_hispanic_or_latino": parse_number(row.get("P004003", "")),
+            }
+        )
+
+    normalized_rows.sort(key=lambda r: (int(r["state_fips"]), r["state_name"]))
+    return normalized_rows, resolved
+
+
+def interpolate_row_values(
+    row_start: Dict[str, object],
+    row_end: Dict[str, object],
+    t: float,
+    year: int,
+) -> Dict[str, object]:
+    out_row: Dict[str, object] = {
+        "year": year,
+        "state_fips": row_start["state_fips"],
+        "state_abbr": row_start["state_abbr"],
+        "state_name": row_start["state_name"],
+    }
+
+    metric_names = [m.metric for m in METRICS]
+    for metric in metric_names:
+        start_val = row_start.get(metric)
+        end_val = row_end.get(metric)
+        if start_val is None or end_val is None:
+            out_row[metric] = None
+            continue
+        out_row[metric] = float(start_val) + (float(end_val) - float(start_val)) * t
+
+    return out_row
+
+
+def build_year_2004_interpolated(
+    year: int,
+    api_key: str,
+    sleep_seconds: float,
+) -> Tuple[List[Dict[str, object]], Dict[str, Dict[str, str]]]:
+    del year
+    rows_2000, _ = build_year_2000_decennial(2000, api_key, sleep_seconds)
+    rows_2005, _ = build_year_2005_acs1(2005, api_key, sleep_seconds)
+
+    by_state_2000 = {row["state_fips"]: row for row in rows_2000}
+    by_state_2005 = {row["state_fips"]: row for row in rows_2005}
+
+    # 2004 is 4/5 of the way from 2000 to 2005.
+    t = 4.0 / 5.0
+    interpolated_rows: List[Dict[str, object]] = []
+    for state_fips in sorted(set(by_state_2000) & set(by_state_2005), key=int):
+        interpolated_rows.append(
+            interpolate_row_values(by_state_2000[state_fips], by_state_2005[state_fips], t, 2004)
+        )
+
+    resolved = {
+        metric.metric: {
+            "id": "INTERPOLATED_2000_TO_2005",
+            "label": "Linear interpolation between 2000 decennial and 2005 ACS detailed",
+        }
+        for metric in METRICS
+    }
+    return interpolated_rows, resolved
+
+
+def build_year(
+    year: int,
+    api_key: str,
+    sleep_seconds: float,
+) -> Tuple[List[Dict[str, object]], Dict[str, Dict[str, str]], str]:
+    if year in (1976, 1980, 1984, 1988):
+        rows, resolved = build_year_pre1990_interpolated_population(year, api_key, sleep_seconds)
+        return rows, resolved, "interpolated population (decennial anchors)"
+
+    if year in (1992, 1996):
+        rows, resolved = build_year_199x_pep_population(year, api_key, sleep_seconds)
+        return rows, resolved, "1990 PEP county aggregation (population only)"
+
+    if year == 2020:
+        rows, resolved = build_year_profile(
+            year,
+            api_key,
+            sleep_seconds,
+            profile_base_url=ACS5_PROFILE_2020_BASE_URL,
+        )
+        return rows, resolved, "acs/acs5/profile"
+
+    if year >= MIN_ACS1_PROFILE_YEAR:
+        rows, resolved = build_year_profile(year, api_key, sleep_seconds)
+        return rows, resolved, "acs/acs1/profile"
+
+    if year == 2005:
+        rows, resolved = build_year_2005_acs1(year, api_key, sleep_seconds)
+        return rows, resolved, "acs/acs1 (detailed tables)"
+
+    if year == 2004:
+        rows, resolved = build_year_2004_interpolated(year, api_key, sleep_seconds)
+        return rows, resolved, "interpolated (2000 decennial -> 2005 ACS detailed)"
+
+    if year == 2000:
+        rows, resolved = build_year_2000_decennial(year, api_key, sleep_seconds)
+        return rows, resolved, "dec/sf1 + dec/sf3"
+
+    raise ValueError(
+        "No supported Census API fallback configured for this year. "
+        "Supported years: 1976, 1980, 1984, 1988, 1992, 1996, 2000, 2004, 2005, and 2006+ "
+        "(with 2020 routed to ACS5 profile)."
+    )
 
 
 def write_wide_csv(path: Path, rows: List[Dict[str, object]]) -> None:
@@ -406,17 +969,47 @@ def main() -> int:
             raise ValueError("--end-year must be >= --start-year")
         years = list(range(args.start_year, args.end_year + 1))
 
+    filtered_years: List[int] = []
+    unsupported_years: List[int] = []
+    for year in years:
+        if year in (1976, 1980, 1984, 1988, 1992, 1996, 2000, 2004, 2005) or year >= MIN_ACS1_PROFILE_YEAR:
+            filtered_years.append(year)
+        else:
+            unsupported_years.append(year)
+
+    if unsupported_years:
+        print(
+            "Skipping unsupported years for configured Census endpoint fallbacks: "
+            + ", ".join(str(y) for y in unsupported_years)
+        )
+        print(
+            "Supported years are 1976, 1980, 1984, 1988, 1992, 1996, 2000, 2004, 2005, and 2006+ "
+            "(with 2020 routed to ACS 5-year profile)."
+        )
+
+    years = filtered_years
+    if not years:
+        print("No supported years requested after filtering. Nothing to download.")
+        return 1
+
     args.outdir.mkdir(parents=True, exist_ok=True)
 
     all_rows: List[Dict[str, object]] = []
     variable_map_by_year: Dict[int, Dict[str, Dict[str, str]]] = {}
 
     for year in years:
-        print(f"Downloading Census profile data for {year}...")
+        print(f"Downloading Census data for {year}...")
         try:
-            rows, resolved = build_year(year, api_key, args.sleep_seconds)
+            rows, resolved, source_name = build_year(year, api_key, args.sleep_seconds)
+            print(f"  Source: {source_name}")
         except urllib.error.HTTPError as exc:
-            print(f"  Skipping {year}: HTTP {exc.code} from Census API")
+            if exc.code == 404:
+                print(
+                    f"  Skipping {year}: Census endpoint not available (HTTP 404). "
+                    "This can happen for unreleased years."
+                )
+            else:
+                print(f"  Skipping {year}: HTTP {exc.code} from Census API")
             continue
         except Exception as exc:  # noqa: BLE001
             print(f"  Skipping {year}: {exc}")

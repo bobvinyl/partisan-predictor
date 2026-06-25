@@ -32,6 +32,21 @@ Optional flags:
 - `--api-key-file census.key` to read key from a local file
 - `--outdir data/census` to change output location
 
+Year-by-year method (presidential-election timeline):
+- `2008, 2012, 2016, 2024`: ACS 1-year profile (`acs/acs1/profile`).
+- `2020`: ACS 5-year profile fallback (`acs/acs5/profile`) because ACS 1-year profile is unavailable for 2020.
+- `2005`: ACS 1-year detailed tables (`acs/acs1`) with derived metrics for adult population and bachelor's-or-higher.
+- `2004`: linear interpolation between 2000 and 2005 values, computed per state and metric.
+- `2000`: Decennial Census (`dec/sf1` + `dec/sf3`) with derived metrics from SF table components.
+- `1992, 1996`: 1990 PEP county aggregation (`1990/pep/int_charagegroups`) for `population_total` only.
+- `1976, 1980, 1984, 1988`: interpolated `population_total` between decennial resident-population anchors.
+- For `1976, 1980, 1984, 1988, 1992, 1996`, non-population metrics are set to null.
+- Future unreleased years may return 404 and are skipped.
+
+Interpolation formulas used:
+- `value_2004 = value_2000 + (4/5) * (value_2005 - value_2000)`
+- Pre-1990 population years use linear interpolation between decennial anchors for the surrounding decades.
+
 You can also set `CENSUS_API_KEY` in your environment.
 
 If `--api-key` and `CENSUS_API_KEY` are both missing, the script will read from `census.key` in the repo root by default (first non-empty line).
