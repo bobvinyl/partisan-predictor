@@ -280,6 +280,76 @@ def yearly_scatter_chart(df: pd.DataFrame, year: int) -> alt.Chart:
     return chart
 
 
+def swing_state_counts_chart(df: pd.DataFrame) -> alt.Chart:
+    counts = (
+        df.groupby("year", as_index=False)["is_swing"]
+        .sum()
+        .rename(columns={"is_swing": "swing_state_count"})
+    )
+
+    chart = (
+        alt.Chart(counts)
+        .mark_bar(color="#0f766e")
+        .encode(
+            x=alt.X("year:O", title="Year"),
+            y=alt.Y("swing_state_count:Q", title="Swing states"),
+            tooltip=[
+                alt.Tooltip("year:O", title="Year"),
+                alt.Tooltip("swing_state_count:Q", title="Swing states", format=".0f"),
+            ],
+        )
+        .properties(height=180, title="Swing state count by year")
+        .configure_view(stroke=None)
+    )
+    return chart
+
+
+def swing_state_heatmap(df: pd.DataFrame) -> alt.LayerChart:
+    states_sorted = [state.replace("District Of Columbia", "District of Columbia") for state in STATE_ORDER]
+    year_values = sorted(df["year"].dropna().astype(int).unique().tolist())
+    chart_height = max(900, len(states_sorted) * 22)
+
+    base = alt.Chart(df).encode(
+        x=alt.X("year:O", sort=year_values, title="Year"),
+        y=alt.Y(
+            "state:N",
+            sort=states_sorted,
+            title="State",
+            axis=alt.Axis(labelOverlap=False, labelLimit=220),
+        ),
+        tooltip=[
+            alt.Tooltip("state:N", title="State"),
+            alt.Tooltip("year:O", title="Year"),
+            alt.Tooltip("state_partisanship:Q", title="State partisanship", format=".2f"),
+            alt.Tooltip("is_swing:N", title="Swing"),
+        ],
+    )
+
+    heatmap = base.mark_rect().encode(
+        color=alt.Color(
+            "state_partisanship:Q",
+            title="State partisanship",
+            scale=alt.Scale(domainMid=0, range=[SIGN_NEGATIVE, "#f8fafc", SIGN_POSITIVE]),
+        )
+    )
+
+    swing_markers = (
+        alt.Chart(df[df["is_swing"] == True])
+        .mark_text(text="S", color="#111827", fontWeight="bold", fontSize=12)
+        .encode(
+            x=alt.X("year:O", sort=year_values, title="Year"),
+            y=alt.Y("state:N", sort=states_sorted, title="State"),
+        )
+    )
+
+    chart = (
+        alt.layer(heatmap, swing_markers)
+        .properties(height=chart_height, title="Swing states by year (S = -5 to 5 state partisanship)")
+        .configure_view(stroke=None)
+    )
+    return chart
+
+
 @st.cache_data(show_spinner=False)
 def available_state_names(df: pd.DataFrame) -> list[str]:
     ordered = [state for state in STATE_ORDER if state in set(df["state"])]
@@ -369,3 +439,18 @@ else:
         if year_points.empty:
             continue
         st.altair_chart(yearly_scatter_chart(scatter_source, year), use_container_width=True)
+
+    st.subheader("Swing States by Year")
+    swing_source = (
+        filtered[
+            filtered["state_partisanship"].notna()
+        ][["state", "year", "state_partisanship"]]
+        .copy()
+    )
+    swing_source["is_swing"] = swing_source["state_partisanship"].between(-5, 5, inclusive="both")
+
+    if swing_source.empty:
+        st.info("No state partisanship data available to calculate swing states in this range.")
+    else:
+        st.altair_chart(swing_state_counts_chart(swing_source), use_container_width=True)
+        st.altair_chart(swing_state_heatmap(swing_source), use_container_width=True)
