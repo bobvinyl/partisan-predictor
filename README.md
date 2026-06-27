@@ -80,11 +80,20 @@ Optional flags:
 - `--start-year 1976 --end-year 2024` to set a year range
 - `--guestbook-name`, `--guestbook-email`, `--guestbook-institution`, `--guestbook-position` to override the Dataverse guestbook fields
 
-The raw output includes a rounded `vote_pct` column (candidate share of total votes in that state-year).
+The raw output includes:
+- `vote_pct` (candidate share of total votes in that state-year)
+- `electoral_votes` (state electoral votes for that election year, based on Census apportionment)
+- `electoral_votes_won_state` (electoral votes awarded to that candidate in that state-year)
+- `electoral_votes_won_election` (total electoral votes awarded to that candidate in that election year)
 
 The party-level CSV includes `year`, `state_fips`, `state_abbr`, and `state_name`, so it can be joined directly to the Census outputs. It also includes:
 - `vote_pct` (party share of all votes in that state-year)
 - `two_party_vote_pct` (party share of Democrat + Republican votes only)
+- `electoral_votes` (state electoral votes for that election year)
+- `electoral_votes_won_state` (electoral votes awarded to that party in that state-year)
+- `electoral_votes_won_election` (total electoral votes awarded to that party in that election year)
+
+Maine and Nebraska split allocations are handled with explicit state-year overrides (recorded in `presidential_results_source.json`) because the MIT source file does not include district-level presidential results.
 
 ## State Partisanship and PVI Output
 
