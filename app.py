@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Dict, List
 
 import altair as alt
 import pandas as pd
@@ -9,6 +10,7 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parent
 CENSUS_PATH = ROOT / "data" / "census" / "state_demographics_wide.csv"
 PVI_PATH = ROOT / "data" / "elections" / "state_partisanship_pvi.csv"
+PARTY_RESULTS_PATH = ROOT / "data" / "elections" / "presidential_results_by_party.csv"
 
 STATE_ORDER = [
     "Alabama",
@@ -74,6 +76,7 @@ POPULATION_COLOR = "#7c3aed"
 def load_data() -> pd.DataFrame:
     census = pd.read_csv(CENSUS_PATH)
     pvi = pd.read_csv(PVI_PATH)
+    party = pd.read_csv(PARTY_RESULTS_PATH)
 
     census = census[
         ["year", "state_name", "state_abbr", "population_total", "population_density_per_sq_mile"]
@@ -83,11 +86,17 @@ def load_data() -> pd.DataFrame:
     pvi = pvi.copy()
     pvi["state"] = pvi["state"].str.replace("District Of Columbia", "District of Columbia", regex=False)
 
+    party = party[["year", "state_name", "state_abbr", "electoral_votes"]].copy()
+    party["state"] = party["state_name"].str.replace("District Of Columbia", "District of Columbia", regex=False)
+    electoral_votes = party.groupby(["year", "state"], as_index=False)["electoral_votes"].max()
+
     df = census.merge(pvi, on=["year", "state"], how="left")
+    df = df.merge(electoral_votes, on=["year", "state"], how="left")
     df["population_total"] = pd.to_numeric(df["population_total"], errors="coerce")
     df["population_density_per_sq_mile"] = pd.to_numeric(df["population_density_per_sq_mile"], errors="coerce")
     df["state_partisanship"] = pd.to_numeric(df["state_partisanship"], errors="coerce")
     df["pvi"] = pd.to_numeric(df["pvi"], errors="coerce")
+    df["electoral_votes"] = pd.to_numeric(df["electoral_votes"], errors="coerce")
     return df
 
 
@@ -280,6 +289,91 @@ def yearly_scatter_chart(df: pd.DataFrame, year: int) -> alt.Chart:
     return chart
 
 
+def _binary_treemap_layout(items: List[Dict[str, float]], x: float, y: float, w: float, h: float) -> List[Dict[str, float]]:
+    if not items:
+        return []
+    if len(items) == 1:
+        out = dict(items[0])
+        out.update({"x0": x, "x1": x + w, "y0": y, "y1": y + h})
+        return [out]
+
+    total = sum(item["value"] for item in items)
+    running = 0.0
+    split_index = 0
+    for idx, item in enumerate(items):
+        running += item["value"]
+        if running >= total / 2:
+            split_index = idx + 1
+            break
+
+    left = items[:split_index]
+    right = items[split_index:]
+    left_total = sum(item["value"] for item in left)
+
+    if w >= h:
+        left_w = w * (left_total / total)
+        return _binary_treemap_layout(left, x, y, left_w, h) + _binary_treemap_layout(right, x + left_w, y, w - left_w, h)
+
+    left_h = h * (left_total / total)
+    return _binary_treemap_layout(left, x, y, w, left_h) + _binary_treemap_layout(right, x, y + left_h, w, h - left_h)
+
+
+def yearly_treemap_chart(df: pd.DataFrame, year: int) -> alt.LayerChart:
+    year_df = (
+        df[df["year"] == year][["state", "state_abbr", "year", "electoral_votes", "state_partisanship"]]
+        .dropna(subset=["electoral_votes", "state_partisanship"])
+        .copy()
+    )
+    year_df = year_df[year_df["electoral_votes"] > 0]
+    year_df = year_df.sort_values("electoral_votes", ascending=False)
+
+    items = [
+        {
+            "state": str(row["state"]),
+            "state_abbr": str(row["state_abbr"]),
+            "year": int(row["year"]),
+            "electoral_votes": float(row["electoral_votes"]),
+            "state_partisanship": float(row["state_partisanship"]),
+            "value": float(row["electoral_votes"]),
+        }
+        for _, row in year_df.iterrows()
+    ]
+    layout = _binary_treemap_layout(items, 0.0, 0.0, 100.0, 60.0)
+    layout_df = pd.DataFrame(layout)
+    layout_df["label_x"] = (layout_df["x0"] + layout_df["x1"]) / 2
+    layout_df["label_y"] = (layout_df["y0"] + layout_df["y1"]) / 2
+
+    base = alt.Chart(layout_df)
+    rect = base.mark_rect(stroke="white", strokeWidth=1).encode(
+        x=alt.X("x0:Q", axis=None),
+        x2="x1:Q",
+        y=alt.Y("y0:Q", axis=None),
+        y2="y1:Q",
+        color=alt.Color(
+            "state_partisanship:Q",
+            title="State partisanship",
+            scale=alt.Scale(domainMid=0, range=[SIGN_NEGATIVE, "#f8fafc", SIGN_POSITIVE]),
+        ),
+        tooltip=[
+            alt.Tooltip("state:N", title="State"),
+            alt.Tooltip("year:O", title="Year"),
+            alt.Tooltip("electoral_votes:Q", title="Electoral votes", format=".0f"),
+            alt.Tooltip("state_partisanship:Q", title="State partisanship", format=".2f"),
+        ],
+    )
+
+    labels = base.mark_text(fontSize=10, color="#111827").encode(
+        x=alt.X("label_x:Q", axis=None),
+        y=alt.Y("label_y:Q", axis=None),
+        text="state_abbr:N",
+    )
+
+    return alt.layer(rect, labels).properties(
+        height=360,
+        title=f"{year}: Electoral votes treemap (color = state partisanship)",
+    ).configure_view(stroke=None)
+
+
 def swing_state_counts_chart(df: pd.DataFrame) -> alt.Chart:
     counts = (
         df.groupby("year", as_index=False)["is_swing"]
@@ -454,3 +548,13 @@ else:
     else:
         st.altair_chart(swing_state_counts_chart(swing_source), use_container_width=True)
         st.altair_chart(swing_state_heatmap(swing_source), use_container_width=True)
+
+    st.subheader("Electoral Vote Treemap by Year")
+    treemap_source = filtered[filtered["electoral_votes"].notna() & filtered["state_partisanship"].notna()].copy()
+    treemap_years = sorted(treemap_source["year"].dropna().astype(int).unique().tolist())
+
+    for year in treemap_years:
+        year_rows = treemap_source[treemap_source["year"] == year]
+        if year_rows.empty:
+            continue
+        st.altair_chart(yearly_treemap_chart(treemap_source, year), use_container_width=True)
